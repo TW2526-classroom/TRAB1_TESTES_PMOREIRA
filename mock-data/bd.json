@@ -7,6 +7,13 @@
       "idCurso": 1,
       "anoCurricular": 2,
       "idade" : 21
+    },
+    {
+        "nome": "Adão",
+      "apelido": "Silva",
+      "idCurso": 2,
+      "anoCurricular": 2,
+      "idade" : 21
     }
   ],
   "cursos": [
