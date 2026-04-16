@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+    <meta charset="UTF-8">
+    <title>Gestão de Alunos e Cursos</title>
+    <style>
+        body { font-family: Arial, sans-serif; max-width: 900px; margin: 40px auto; padding: 0 20px; }
+        h1, h2 { color: #333; }
+        table { width: 100%; border-collapse: collapse; margin-bottom: 20px; }
+        th, td { border: 1px solid #ccc; padding: 8px 12px; text-align: left; }
+        th { background-color: #f0f0f0; }
+        .form-section { background: #f9f9f9; padding: 16px; border-radius: 8px; margin-bottom: 30px; }
+        .form-section input, .form-section select { padding: 6px; margin: 4px; width: 200px; }
+        button { padding: 6px 12px; margin: 4px; cursor: pointer; }
+        .btn-edit { background: #f0a500; color: white; border: none; border-radius: 4px; }
+        .btn-delete { background: #e74c3c; color: white; border: none; border-radius: 4px; }
+        .btn-save { background: #2ecc71; color: white; border: none; border-radius: 4px; }
+        .btn-load { background: #3498db; color: white; border: none; border-radius: 4px; }
+        #mensagem { color: green; font-weight: bold; margin: 10px 0; }
+    </style>
+</head>
+<body>
+
+<h1>Gestão de Alunos e Cursos</h1>
+<div id="mensagem"></div>
+
+<!-- ========== CURSOS ========== -->
+<h2>Cursos</h2>
+<button class="btn-load" id="btnAtualizarCursos">Atualizar Lista</button>
+<table id="tabelaCursos">
+    <thead>
+        <tr><th>ID</th><th>Nome do Curso</th><th>Ações</th></tr>
+    </thead>
+    <tbody></tbody>
+</table>
+
+<div class="form-section">
+    <h3 id="tituloCursoForm">Adicionar Curso</h3>
+    <input type="hidden" id="cursoId">
+    <input type="text" id="nomeDoCurso" placeholder="Nome do Curso">
+    <button class="btn-save" id="btnGuardarCurso">Guardar</button>
+    <button id="btnLimparCurso">Limpar</button>
+</div>
+
+<!-- ========== ALUNOS ========== -->
+<h2>Alunos</h2>
+<button class="btn-load" id="btnAtualizarAlunos">Atualizar Lista</button>
+<table id="tabelaAlunos">
+    <thead>
+        <tr><th>ID</th><th>Nome</th><th>Apelido</th><th>Idade</th><th>Curso</th><th>Ações</th></tr>
+    </thead>
+    <tbody></tbody>
+</table>
+
+<div class="form-section">
+    <h3 id="tituloAlunoForm">Adicionar Aluno</h3>
+    <input type="hidden" id="alunoId">
+    <input type="text" id="nomeAluno" placeholder="Nome">
+    <input type="text" id="apelidoAluno" placeholder="Apelido">
+    <input type="number" id="idadeAluno" placeholder="Idade">
+    <select id="cursoAluno">
+        <option value="">-- Selecionar Curso --</option>
+    </select>
+    <button class="btn-save" id="btnGuardarAluno">Guardar</button>
+    <button id="btnLimparAluno">Limpar</button>
+</div>
+
+<script>
+const API = "http://localhost:3000";
+let cursos = [];
+
+// ========== UTILS ==========
+function msg(texto, erro = false) {
+    const el = document.getElementById("mensagem");
+    el.style.color = erro ? "red" : "green";
+    el.textContent = texto;
+    setTimeout(() => el.textContent = "", 3000);
+}
+
+// ========== CURSOS ==========
+async function carregarCursos() {
+    const res = await fetch(`${API}/cursos`);
+    cursos = await res.json();
+
+    const tbody = document.querySelector("#tabelaCursos tbody");
+    tbody.innerHTML = "";
+
+    const sel = document.getElementById("cursoAluno");
+    sel.innerHTML = '<option value="">-- Selecionar Curso --</option>';
+
+    cursos.forEach(c => {
+        const tr = document.createElement("tr");
+        tr.innerHTML = `
+            <td>${c.id}</td>
+            <td>${c.nomeDoCurso}</td>
+            <td>
+                <button class="btn-edit">Editar</button>
+                <button class="btn-delete">Apagar</button>
+            </td>`;
+        tr.querySelector(".btn-edit").addEventListener("click", () => editarCurso(c.id));
+        tr.querySelector(".btn-delete").addEventListener("click", () => apagarCurso(c.id));
+        tbody.appendChild(tr);
+
+        const opt = document.createElement("option");
+        opt.value = c.id;
+        opt.textContent = c.nomeDoCurso;
+        sel.appendChild(opt);
+    });
+}
+
+async function guardarCurso() {
+    const id = document.getElementById("cursoId").value;
+    const nomeDoCurso = document.getElementById("nomeDoCurso").value.trim();
+    if (!nomeDoCurso) return msg("Nome do curso obrigatório.", true);
+
+    if (id) {
+        await fetch(`${API}/cursos/${id}`, {
+            method: "PUT",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ id, nomeDoCurso })
+        });
+        msg("Curso atualizado com sucesso.");
+    } else {
+        await fetch(`${API}/cursos`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ nomeDoCurso })
+        });
+        msg("Curso adicionado com sucesso.");
+    }
+    limparFormCurso();
+    await carregarCursos();
+}
+
+function editarCurso(id) {
+    const curso = cursos.find(c => c.id === id);
+    if (!curso) return msg("Curso não encontrado.", true);
+    document.getElementById("cursoId").value = curso.id;
+    document.getElementById("nomeDoCurso").value = curso.nomeDoCurso;
+    document.getElementById("tituloCursoForm").textContent = "Editar Curso";
+}
+
+async function apagarCurso(id) {
+    if (!confirm("Apagar curso?")) return;
+    await fetch(`${API}/cursos/${id}`, { method: "DELETE" });
+    msg("Curso apagado.");
+    await carregarCursos();
+}
+
+function limparFormCurso() {
+    document.getElementById("cursoId").value = "";
+    document.getElementById("nomeDoCurso").value = "";
+    document.getElementById("tituloCursoForm").textContent = "Adicionar Curso";
+}
+
+// ========== ALUNOS ==========
+async function carregarAlunos() {
+    const res = await fetch(`${API}/alunos`);
+    const alunos = await res.json();
+
+    const tbody = document.querySelector("#tabelaAlunos tbody");
+    tbody.innerHTML = "";
+
+    alunos.forEach(a => {
+        const curso = cursos.find(c => c.id === a.cursoId);
+        const tr = document.createElement("tr");
+        tr.innerHTML = `
+            <td>${a.id}</td>
+            <td>${a.nome}</td>
+            <td>${a.apelido}</td>
+            <td>${a.idade}</td>
+            <td>${curso ? curso.nomeDoCurso : "N/A"}</td>
+            <td>
+                <button class="btn-edit">Editar</button>
+                <button class="btn-delete">Apagar</button>
+            </td>`;
+        tr.querySelector(".btn-edit").addEventListener("click", () => editarAluno(a.id));
+        tr.querySelector(".btn-delete").addEventListener("click", () => apagarAluno(a.id));
+        tbody.appendChild(tr);
+    });
+}
+
+async function guardarAluno() {
+    const id = document.getElementById("alunoId").value;
+    const nome = document.getElementById("nomeAluno").value.trim();
+    const apelido = document.getElementById("apelidoAluno").value.trim();
+    const idade = parseInt(document.getElementById("idadeAluno").value);
+    const cursoId = document.getElementById("cursoAluno").value;
+
+    if (!nome || !apelido || !idade || !cursoId) return msg("Preencha todos os campos.", true);
+
+    const dados = { nome, apelido, idade, cursoId };
+
+    if (id) {
+        await fetch(`${API}/alunos/${id}`, {
+            method: "PUT",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ id, ...dados })
+        });
+        msg("Aluno atualizado com sucesso.");
+    } else {
+        await fetch(`${API}/alunos`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(dados)
+        });
+        msg("Aluno adicionado com sucesso.");
+    }
+    limparFormAluno();
+    await carregarAlunos();
+}
+
+async function editarAluno(id) {
+    const res = await fetch(`${API}/alunos/${id}`);
+    const aluno = await res.json();
+    document.getElementById("alunoId").value = aluno.id;
+    document.getElementById("nomeAluno").value = aluno.nome;
+    document.getElementById("apelidoAluno").value = aluno.apelido;
+    document.getElementById("idadeAluno").value = aluno.idade;
+    document.getElementById("cursoAluno").value = aluno.cursoId;
+    document.getElementById("tituloAlunoForm").textContent = "Editar Aluno";
+}
+
+async function apagarAluno(id) {
+    console.log(id)
+    if (!confirm("Apagar aluno?")) return;
+    await fetch(`${API}/alunos/${id}`, { method: "DELETE" });
+    msg("Aluno apagado.");
+    await carregarAlunos();
+}
+
+function limparFormAluno() {
+    document.getElementById("alunoId").value = "";
+    document.getElementById("nomeAluno").value = "";
+    document.getElementById("apelidoAluno").value = "";
+    document.getElementById("idadeAluno").value = "";
+    document.getElementById("cursoAluno").value = "";
+    document.getElementById("tituloAlunoForm").textContent = "Adicionar Aluno";
+}
+
+// ========== EVENTOS ==========
+document.getElementById("btnAtualizarCursos").addEventListener("click", carregarCursos);
+document.getElementById("btnAtualizarAlunos").addEventListener("click", carregarAlunos);
+document.getElementById("btnGuardarCurso").addEventListener("click", guardarCurso);
+document.getElementById("btnLimparCurso").addEventListener("click", limparFormCurso);
+document.getElementById("btnGuardarAluno").addEventListener("click", guardarAluno);
+document.getElementById("btnLimparAluno").addEventListener("click", limparFormAluno);
+
+// Init
+carregarCursos().then(carregarAlunos);
+</script>
+</body>
+</html>
