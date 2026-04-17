@@ -28,14 +28,18 @@ app.get("/cursos", (req, res) => {
 });
 
 app.delete("/alunos/:id", (req, res) => {
-    const id = parseInt(req.params.id);
-    const existe = alunos.find(aluno => aluno.id === id);
-    if (!existe) {
+    // const id = parseInt(req.params.id, 10);
+    const id = req.params.id;
+
+    const index = alunos.findIndex(aluno => aluno.id === id);
+    if (index === -1) {
         return res.status(404).json({ message: "Aluno não encontrado" });
     }
-    alunos = alunos.filter(aluno => aluno.id !== id);
-    res.status(200).json({ message: "Aluno apagado" });
-}
+
+    const [alunoApagado] = alunos.splice(index, 1);
+
+    return res.status(200).json(alunoApagado);
+});
 
 app.listen(port, () => {
   console.log(`Example app listening on port ${port}`)
