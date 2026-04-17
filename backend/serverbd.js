@@ -6,7 +6,7 @@ const app = express();
 const port = process.env.PORT || 3000;
 
 
-const mongoUri = process.env.MONGO_URI || "mongodb+srv://pmoreira:pmoreira@pmongo.7wrtx.mongodb.net/?appName=pmongo";
+const mongoUri = process.env.MONGO_URI || "mongodb+srv://pmoreira:pmoreira@pmongo.7wrtx.mongodb.net/twalunos";
 
 app.use(cors());
 app.use(express.json());
@@ -57,6 +57,7 @@ app.get("/cursos/:id", async (req, res) => {
 
 app.post("/cursos", async (req, res) => {
   try {
+    console.log(req.body.nomeDoCurso);
     const novoCurso = await Curso.create({ nomeDoCurso: req.body.nomeDoCurso });
     res.location(`/cursos/${novoCurso._id}`);
     res.status(201).json(novoCurso);
