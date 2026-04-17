@@ -4,7 +4,9 @@ const cors = require("cors");
 
 const app = express();
 const port = process.env.PORT || 3000;
-const mongoUri = process.env.MONGO_URI || "mongodb://127.0.0.1:27017/trab1_testes";
+
+
+const mongoUri = process.env.MONGO_URI || "mongodb+srv://pmoreira:pmoreira@pmongo.7wrtx.mongodb.net/?appName=pmongo";
 
 app.use(cors());
 app.use(express.json());
@@ -92,7 +94,16 @@ app.delete("/alunos/:id", async (req, res) => {
   }
 });
 
-app.listen(port, () => {
-  console.log(`Example app listening on port ${port}`)
-});
+mongoose
+  .connect(mongoUri)
+  .then(() => {
+    console.log("MongoDB ligado");
+    app.listen(port, () => {
+      console.log(`API a correr em http://localhost:${port}`);
+    });
+  })
+  .catch((err) => {
+    console.error("Erro MongoDB:", err.message);
+    process.exit(1);
+  });
 
