@@ -1,5 +1,8 @@
 const express = require('express')
 const app = express()
+
+app.use(express.json());
+
 const port = 3000
 
 let alunos = [
@@ -40,6 +43,18 @@ app.delete("/alunos/:id", (req, res) => {
 
     return res.status(200).json(alunoApagado);
 });
+
+app.post("/alunos", (req, res) => {
+    const novoAluno = req.body;
+    console.log(novoAluno);
+    // pode causar bugs
+    novoAluno.id = alunos.length + 1;
+    alunos.push(novoAluno);
+    res.set("Content-Type", "application/json");
+    res.set("Location", `/alunos/${novoAluno.id}`);
+    res.status(201).json(novoAluno);
+}); 
+
 
 app.listen(port, () => {
   console.log(`Example app listening on port ${port}`)
